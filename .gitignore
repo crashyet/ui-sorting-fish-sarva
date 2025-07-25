@@ -1,0 +1,6 @@
+__pycache__
+.venv
+backup
+fix
+webcam_external
+testing_webcam_external.py
