@@ -1,0 +1,74 @@
+[
+  {
+    "waktu": "[11:52:55][17-09]",
+    "tipe": "sistem",
+    "jenis": null,
+    "berat": null,
+    "box": null,
+    "pesan": "Sistem dimulai."
+  },
+  {
+    "waktu": "[11:53:07][17-09]",
+    "tipe": "deteksi",
+    "jenis": "mouse",
+    "berat": 5.51,
+    "box": "A3",
+    "pesan": null
+  },
+  {
+    "waktu": "[11:53:35][17-09]",
+    "tipe": "deteksi",
+    "jenis": "phone",
+    "berat": 6.93,
+    "box": "B3",
+    "pesan": null
+  },
+  {
+    "waktu": "[11:53:41][17-09]",
+    "tipe": "deteksi",
+    "jenis": "phone",
+    "berat": 6.12,
+    "box": "B3",
+    "pesan": null
+  },
+  {
+    "waktu": "[11:53:49][17-09]",
+    "tipe": "deteksi",
+    "jenis": "phone",
+    "berat": 6.3,
+    "box": "B3",
+    "pesan": null
+  },
+  {
+    "waktu": "[11:53:55][17-09]",
+    "tipe": "deteksi",
+    "jenis": "phone",
+    "berat": 2.46,
+    "box": "B3",
+    "pesan": null
+  },
+  {
+    "waktu": "[11:54:02][17-09]",
+    "tipe": "deteksi",
+    "jenis": "phone",
+    "berat": 7.03,
+    "box": "B3",
+    "pesan": null
+  },
+  {
+    "waktu": "[11:54:31][17-09]",
+    "tipe": "sistem",
+    "jenis": null,
+    "berat": null,
+    "box": null,
+    "pesan": "Sistem dihentikan."
+  },
+  {
+    "waktu": "[11:54:56][17-09]",
+    "tipe": "sistem",
+    "jenis": null,
+    "berat": null,
+    "box": null,
+    "pesan": "Sistem direset."
+  }
+]

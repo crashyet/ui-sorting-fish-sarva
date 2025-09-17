@@ -4,11 +4,14 @@ import cv2
 import os
 import json
 import time
+import datetime
 from computer_vision import SimpleDetector
+from simulasi.simulasi_sensor_berat import baca_berat
+from backend_log import simpan_log_deteksi, log_system_activity, ambil_semua_log
 
 class App(ctk.CTk):
     def load_settings(self):
-        self.settings_path = os.path.join(os.path.dirname(__file__), "data\settings.json")
+        self.settings_path = os.path.join(os.path.dirname(__file__), "data/settings.json")
         if os.path.exists(self.settings_path):
             with open(self.settings_path, "r") as f:
                 try:
@@ -59,12 +62,13 @@ class App(ctk.CTk):
         self.title("Fish Sorting UI")
         # self.geometry("1400x800")
         self.attributes("-fullscreen", True)
-        self.attributes("-topmost", True)
+        # self.attributes("-topmost", True)
         self.bind("<Escape>", lambda event: self.attributes("-fullscreen", False))
         self.configure(fg_color="#f3f4f6")
         self.settings_window = None
         self.timer_label = None # Inisialisasi timer label
         self.system_running = False
+        self.last_saved_time = 0  # untuk delay antar penyimpanan
         self.computer_vision = SimpleDetector("data/keras_model.h5", "data/labels.txt", confidence_threshold=0.8)
 
         # Grid utama
@@ -153,14 +157,20 @@ class App(ctk.CTk):
             return
 
         now = time.time()
-        # label, conf, is_detected = self.predict(frame, now)
+        # # label, conf, is_detected = self.predict(frame, now)
         label, conf, is_detected = self.computer_vision.stable_detect(frame, now)
 
-        if is_detected:
-            print(f"✅ Ikan terdeteksi: {label} ({conf:.1%})")
+        if self.system_running and is_detected:
+            # print(f"✅ Ikan terdeteksi: {label} ({conf:.1%})")
             self.jenis_deteksi.configure(text=label)
-        else:
-            self.jenis_deteksi.configure(text="-")
+            if now - self.last_saved_time >= 2.0:  # delay 2 detik antar simpan
+                berat = baca_berat()
+                self.berat_deteksi.configure(text=f"{berat:.2f} Kg")
+                simpan_log_deteksi(label, berat)
+                self.last_saved_time = now
+                print(f"✅ Data disimpan: {label}, {berat} Kg")
+        # else:
+        #     self.jenis_deteksi.configure(text="-")
 
         # Tampilkan ke UI
         if conf >= self.computer_vision.confidence_threshold:
@@ -320,7 +330,7 @@ class App(ctk.CTk):
         log_frame.grid_rowconfigure(1, weight=1)
         log_frame.grid_columnconfigure(0, weight=1)
         ctk.CTkLabel(log_frame, text="Log Activity", font=ctk.CTkFont(size=22, weight="bold"), text_color="#2563eb").grid(row=0, column=0, padx=10, pady=(20,8), sticky="nw")
-        self.log_textbox = ctk.CTkTextbox(log_frame, corner_radius=10, fg_color="#e0e7ff", border_width=0, font=ctk.CTkFont(size=14), width=160)
+        self.log_textbox = ctk.CTkTextbox(log_frame, corner_radius=10, fg_color="#e0e7ff", border_width=0, font=ctk.CTkFont(family="Consolas",size=14), width=170)
         self.log_textbox.insert("1.0", "")
         self.log_textbox.configure(state="disabled")
         self.log_textbox.grid(row=1, column=0, padx=10, pady=(0,10), sticky="nsew")
@@ -366,13 +376,15 @@ class App(ctk.CTk):
         self.update_timer()
         self.load_json_data()
         self.update_all_sections()
-        self.log_activity("Sistem dimulai.")
+        # self.log_activity("Sistem dimulai.")
+        log_system_activity("Sistem dimulai.")
 
     def stop_system(self):
         self.system_running = False
         if hasattr(self, 'timer_job'):
             self.after_cancel(self.timer_job)
-        self.log_activity("Sistem dihentikan.")
+        # self.log_activity("Sistem dihentikan.")
+        log_system_activity("Sistem dihentikan.")
 
     def reset_system(self):
         self.system_running = False
@@ -385,7 +397,8 @@ class App(ctk.CTk):
             
         self.reset_data()
         self.update_all_sections()
-        self.log_activity("Sistem direset.")
+        # self.log_activity("Sistem direset.")
+        log_system_activity("Sistem direset.")
 
     def update_timer(self):
         if not hasattr(self, 'timer_seconds'):
@@ -405,7 +418,7 @@ class App(ctk.CTk):
         return f"{h:02}:{m:02}:{s:02}"
 
     def load_json_data(self):
-        json_path = os.path.join(os.path.dirname(__file__), "data\data.json")
+        json_path = os.path.join(os.path.dirname(__file__), "data/data.json")
         print("Memuat dari:", json_path)
         if not os.path.exists(json_path):
             raise FileNotFoundError(f"File data.json tidak ditemukan di: {json_path}")
@@ -430,7 +443,7 @@ class App(ctk.CTk):
             # "log_activity": []
         }
 
-        json_path = os.path.join(os.path.dirname(__file__), "data\data.json")
+        json_path = os.path.join(os.path.dirname(__file__), "data/data.json")
         with open(json_path, "w") as f:
             json.dump(self.json_data, f, indent=4)
 
@@ -447,6 +460,7 @@ class App(ctk.CTk):
             val = info_data.get(key, "0")
             self.info_data_labels[i].configure(text=val)
 
+        # Update box manager
         box_data = self.json_data.get("box_manager", {})
         if isinstance(box_data, list):
             raise TypeError("box_manager harus berupa dictionary, bukan list. Cek file data.json!")
@@ -461,22 +475,28 @@ class App(ctk.CTk):
                 value = box_data.get(key, "0")
                 self.box_btns[r][c].configure(text=f"{value} Kg")
 
-
+        # Update trash
         self.trash_btn.configure(text=f"TRASH\n{self.json_data.get('trash', '0')} Kg")
+
+        # Update log activity
         self.log_textbox.configure(state="normal")
         self.log_textbox.delete("1.0", "end")
-        for entry in self.json_data.get("log_activity", []):
-            self.log_textbox.insert("end", entry+"\n")
-        self.log_textbox.configure(state="disabled")
 
-    def log_activity(self, msg):
-        import datetime
-        now = datetime.datetime.now().strftime("[%H:%M:%S|%d/%m]")
-        entry = f"{now} {msg}"
-        self.log_textbox.configure(state="normal")
-        self.log_textbox.insert("end", entry+"\n")
-        self.log_textbox.see("end")
+        log_data = ambil_semua_log()
+
+        for log in log_data:
+            if log["tipe"] == "deteksi":
+                entry = f"{log['waktu']} Ikan {log['jenis']} - {log['berat']}Kg → {log['box']}"
+            elif log["tipe"] == "sistem":
+                entry = f"{log['waktu']} [system] {log['pesan']}"
+            else:
+                entry = f"{log['waktu']} [UNKNOWN] {log}"
+
+            self.log_textbox.insert("end", entry + "\n")
+
         self.log_textbox.configure(state="disabled")
+        self.after(1000, self.update_all_sections)
+        self.log_textbox.see("end")
 
     def confirm_system_reset(self):
         alert = ctk.CTkToplevel(self)
@@ -500,14 +520,14 @@ class App(ctk.CTk):
         key = f"{chr(65 + col)}{row + 1}"
         self.json_data['box_manager'][key] = "0"
         self.update_all_sections()
-        self.log_activity(f"Box {key} direset.")
+        log_system_activity(f"Box {key} direset.")
         if alert_window:
             alert_window.destroy()
 
     def reset_trash_value(self, alert_window):
         self.json_data['trash'] = "0"
         self.update_all_sections()
-        self.log_activity("Box sampah direset.")
+        log_system_activity("Box sampah direset.")
         if alert_window:
             alert_window.destroy()
 

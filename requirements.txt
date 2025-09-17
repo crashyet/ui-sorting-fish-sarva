@@ -4,3 +4,4 @@ tensorflow
 Pillow
 customtkinter
 pyserial
+mysql-connector-python
