@@ -1,21 +1,31 @@
 {
-    "info_data": {
-        "pcs_sorted": "123",
-        "kg_sorted": "12,5",
-        "pcs_per_hour": "81",
-        "kg_per_hour": "23,5"
-    },
-    "box_manager": {
-        "A1": "11,4",
-        "A2": "23,5",
-        "A3": "10,5",
-        "B1": "18,2",
-        "B2": "33,3",
-        "B3": "12,9",
-        "C1": "23,5",
-        "C2": "11,3",
-        "C3": "29,7"
-    },
-    "trash": "72,5",
-    "log_activity": []
+  "info_data": {
+    "pcs_sorted": "6634",
+    "kg_sorted": "3234.5",
+    "pcs_per_hour": "86845",
+    "kg_per_hour": "42342.5"
+  },
+  "box_manager": {
+    "A1": "31",
+    "B1": "12.5",
+    "C1": "0",
+    "A2": "23.5",
+    "B2": "8.7",
+    "C2": "10",
+    "A3": "15.2",
+    "B3": "5.3",
+    "C3": "0"
+  },
+  "trash": "234",
+  "log_activity": [
+    "[13:44:46|12/05] Sistem dimulai - 0kg -> INFO",
+    "[13:45:40|12/05] Sistem dihentikan - 0kg -> INFO",
+    "[13:45:40|12/05] Sistem dimulai - 0kg -> INFO",
+    "[13:45:51|12/05] Sistem dihentikan - 0kg -> INFO",
+    "[13:45:56|12/05] Box C3 direset - 0kg -> INFO",
+    "[13:45:58|12/05] Sistem dimulai - 0kg -> INFO",
+    "[13:46:16|12/05] Sistem dihentikan - 0kg -> INFO",
+    "[16:48:08|12/05] Sistem dimulai - 0kg -> INFO",
+    "[16:52:49|12/05] Sistem dihentikan - 0kg -> INFO"
+  ]
 }

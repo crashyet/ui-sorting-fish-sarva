@@ -1,0 +1,4 @@
+__pycache__/
+*.pyc
+Testing-UI/sarva_monitor.db*
+Testing-UI/raspi_bridge.log

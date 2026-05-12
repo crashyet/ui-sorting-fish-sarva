@@ -1,10 +1,10 @@
 {
   "camera": {
-    "exposure": -56,
-    "gain": -83,
-    "contrast": 63,
-    "hue": -43,
-    "brightness": 25,
+    "exposure": 7,
+    "gain": -13,
+    "contrast": 0,
+    "hue": 0,
+    "brightness": 51,
     "auto": false
   },
   "range": {
@@ -50,9 +50,25 @@
     ]
   },
   "conveyor": {
-    "conveyor_1": 16,
-    "conveyor_2": 6,
-    "conveyor_3": 3,
-    "conveyor_4": 6
+    "conveyor_1": 10,
+    "conveyor_2": 4,
+    "conveyor_3": 8,
+    "conveyor_4": 8,
+    "conveyor_5": 9
+  },
+  "database": {
+    "type": "sqlite",
+    "path": "sarva_monitor.db"
+  },
+  "raspi": {
+    "enabled": true,
+    "host": "192.168.30.185",
+    "port": "65432",
+    "timeout": "1.5"
+  },
+  "security": {
+    "admin_pin_salt": "",
+    "admin_pin_hash": "",
+    "pin_iterations": 180000
   }
 }
