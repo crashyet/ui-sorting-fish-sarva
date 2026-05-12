@@ -1,19 +1,26 @@
-# SARVA Fish Sorting Monitor
+# Panduan Penggunaan SARVA Fish Sorting Monitor
 
-Dashboard ini berjalan di PC. PC mengirim perintah ke Raspberry Pi lewat WiFi. Raspberry Pi yang menggerakkan GPIO, COM, relay, VFD, atau controller mesin.
+Dokumen ini dipakai untuk operator, teknisi, dan supervisor yang menjalankan aplikasi monitoring mesin sorting ikan. Aplikasi berjalan di PC. PC membaca data produksi, menampilkan kondisi mesin, menyimpan event ke SQLite, dan mengirim perintah ke Raspberry Pi melalui TCP WiFi.
 
-## File Produksi
+Raspberry Pi menangani perangkat lapangan seperti GPIO, relay, VFD, serial/COM, atau controller lain sesuai wiring produksi.
 
-- `Testing-UI/main.py`: aplikasi PC.
-- `Testing-UI/settings.json`: konfigurasi kamera, conveyor default, SQLite, dan Raspi.
-- `Testing-UI/data.json`: data monitoring yang dibaca dashboard.
-- `Testing-UI/raspi_bridge_server.py`: service TCP JSON untuk Raspberry Pi.
-- `Testing-UI/requirements.txt`: dependency Python.
+## 1. File Aplikasi
 
-## Install PC
+File yang dipakai di produksi:
 
-1. Install Python 3.10 atau lebih baru.
-2. Masuk ke folder project.
+- `Testing-UI/main.py` untuk menjalankan dashboard PC.
+- `Testing-UI/settings.json` untuk konfigurasi kamera, conveyor, database, dan koneksi Raspi.
+- `Testing-UI/data.json` untuk data monitoring yang dibaca dashboard.
+- `Testing-UI/raspi_bridge_server.py` sebagai contoh bridge TCP JSON di Raspberry Pi.
+- `Testing-UI/requirements.txt` untuk daftar package Python.
+- `docs/screenshots/` untuk gambar panduan.
+
+File database SQLite dibuat otomatis saat aplikasi berjalan. Nama default database: `sarva_monitor.db`.
+
+## 2. Instalasi di PC
+
+1. Install Python 3.10 atau versi lebih baru.
+2. Buka terminal di folder project.
 
 ```powershell
 cd "<folder-project>"
@@ -25,140 +32,269 @@ cd "<folder-project>"
 python -m pip install -r "Testing-UI\requirements.txt"
 ```
 
-4. Jalankan dashboard.
+4. Jalankan aplikasi.
 
 ```powershell
 python "Testing-UI\main.py"
 ```
 
-## Tampilan Utama
+Package utama:
 
-![Dashboard stopped](screenshots/01-dashboard-stopped.png)
+- `opencv-python` untuk membaca kamera dan mengatur property kamera.
+- `Pillow` untuk merender frame kamera ke Tkinter.
+- Library bawaan Python: `tkinter`, `sqlite3`, `socket`, `json`, `csv`, `threading`, `hashlib`, dan `pathlib`.
 
-Status awal berada di `STANDBY`. Kamera mati sampai operator menekan `START SYSTEM`.
+## 3. Dashboard Saat Standby
+
+![Dashboard standby](screenshots/01-dashboard-stopped.png)
+
+Saat aplikasi pertama dibuka, status mesin berada di `STANDBY` atau `STOPPED`. Kamera belum aktif. Operator mulai kerja dari panel `Machine Control` di kanan bawah.
+
+Bagian atas layar berisi ringkasan sistem:
+
+- `STATUS` menunjukkan kondisi mesin: `STANDBY`, `RUNNING`, `STOPPED`, atau `RESET`.
+- `UPTIME` menghitung lama sistem berjalan setelah tombol `START` ditekan.
+- `CLOCK` menampilkan jam PC.
+- `VIDEO` menunjukkan status kamera, misalnya `CAM OFF` atau `CAM 0 60FPS`.
+- `Refresh` memuat ulang `data.json` dan `settings.json`.
 
 Panel utama:
 
-- `Camera Capture`: feed kamera saat sistem jalan.
-- `Production Summary`: total pcs, total kg, pcs/jam, kg/jam.
-- `Box Manager`: isi box A1 sampai C3 dan reject bin.
-- `Velocity Manager`: speed conveyor dalam `m/s`.
-- `Log Activity`: event sorting terakhir.
-- `Machine Control`: START, STOP, RESET, Settings.
+- `Camera Capture` menampilkan feed kamera dan overlay deteksi.
+- `Box Manager` menampilkan isi box A1 sampai C3 serta reject bin.
+- `Log Activity` menampilkan event mesin dan event operator.
+- `Production Summary` menampilkan total pcs, total kg, pcs/jam, dan kg/jam.
+- `Velocity Manager` menampilkan speed conveyor dalam `m/s`.
+- `Machine Control` berisi tombol operasi utama.
 
-## START dan STOP
+## 4. Tombol Machine Control
 
-`START SYSTEM` melakukan ini:
+Panel `Machine Control` berada di kanan bawah. Tombol disusun dari atas ke bawah.
 
-- menyalakan kamera;
-- mulai polling `data.json`;
-- mengirim command `system_start` ke Raspberry Pi;
-- mengirim default speed conveyor dari tab Conveyor;
-- mencatat event ke SQLite.
+`START`
 
-`STOP SYSTEM` melakukan ini:
+- Menyalakan kamera.
+- Memulai polling data produksi.
+- Mengirim command `system_start` ke Raspberry Pi.
+- Mengirim default speed conveyor yang tersimpan di tab `Conveyor`.
+- Menulis event start ke SQLite.
 
-- mematikan kamera;
-- menghentikan polling;
-- mengirim command `system_stop` ke Raspberry Pi;
-- mencatat event ke SQLite.
+`STOP`
 
-`RESET SYSTEM` meminta dua konfirmasi:
+- Mematikan kamera.
+- Menghentikan polling data.
+- Mengirim command `system_stop` ke Raspberry Pi.
+- Menulis event stop ke SQLite.
 
-1. pilih `Yes` pada dialog pertama;
-2. ketik `RESET` pada dialog kedua.
+`RESET`
 
-Setelah konfirmasi benar, aplikasi menyimpan snapshot sebelum reset ke tabel `reset_events`, mencatat event operator, mengirim `system_reset` ke Raspi, lalu mengosongkan statistik tampilan.
+- Meminta dua konfirmasi sebelum proses berjalan.
+- Menyimpan snapshot data sebelum reset ke tabel `reset_events`.
+- Mengirim command `system_reset` ke Raspberry Pi.
+- Mengosongkan statistik tampilan setelah konfirmasi benar.
 
-## Setting Conveyor
+`SETTINGS`
 
-![Conveyor settings](screenshots/02-settings-conveyor-defaults.png)
+- Membuka jendela pengaturan.
+- Isi pengaturan disimpan setelah operator menekan `Apply`.
+- Tombol `Cancel` menutup jendela tanpa menyimpan perubahan terakhir.
 
-Nilai di tab Conveyor adalah default saat sistem dinyalakan. Saat `START SYSTEM` ditekan, PC mengirim nilai ini ke Raspi.
+## 5. Menjalankan Sistem
 
-Skala UI:
+![Dashboard running](screenshots/02-dashboard-started.png)
 
-- `0` = `0.0 m/s`
-- `8` = `0.8 m/s`
-- `20` = `2.0 m/s`
+Tekan `START` saat mesin siap. Setelah start:
 
-Tombol `STOP` pada tiap conveyor mengubah default lane tersebut ke `0.0 m/s`.
+1. `STATUS` berubah menjadi `RUNNING`.
+2. `UPTIME` mulai menghitung.
+3. `VIDEO` menampilkan status kamera dan FPS.
+4. `Camera Capture` menampilkan feed kamera.
+5. `Log Activity` mencatat event `Sistem dimulai`.
+6. Raspberry Pi menerima default speed conveyor.
 
-## Data Tools
+Selama sistem berjalan, operator memantau tiga area utama:
 
-![Data tools](screenshots/05-settings-data-tools.png)
+- Kamera untuk melihat object, weight, route, dan confidence.
+- Box Manager untuk melihat kapasitas tiap box.
+- Velocity Manager untuk melihat speed conveyor yang sedang dipakai.
 
-Menu `Settings > Data` berisi:
+Tekan `STOP` sebelum maintenance, pergantian shift, pengecekan kamera, atau saat mesin harus dihentikan.
 
-- `LOAD DATA`: reload dashboard dari `data.json`;
-- `EXPORT CSV`: export log sorting ke file CSV.
+## 6. Camera Capture
 
-Tombol ini dipindahkan ke Settings supaya panel Machine Control hanya berisi perintah mesin.
+Panel kamera menampilkan video dari kamera utama. Aplikasi menjaga aspect ratio frame supaya gambar tidak tertarik. Saat kamera aktif, overlay hijau menampilkan area deteksi.
 
-## Setting SQLite
+Data di bawah kamera:
 
-![SQLite locked](screenshots/03-settings-sqlite-locked.png)
+- `OBJECT` berisi jenis object terakhir.
+- `WEIGHT` berisi berat object terakhir.
+- `ROUTE` berisi tujuan box.
+- `CONFIDENCE` berisi nilai confidence deteksi.
 
-Setting database dikunci. Pertama kali, supervisor menekan `SET ADMIN PIN`, lalu membuat PIN minimal 6 karakter. Setelah PIN dibuat, perubahan path database butuh PIN.
+Jika kamera tidak tersedia, aplikasi tetap menampilkan mode simulasi agar dashboard masih bisa diuji.
 
-SQLite dibuat otomatis saat aplikasi berjalan:
+## 7. Production Summary
 
-```text
-Testing-UI\sarva_monitor.db
-```
+Panel ini dipakai untuk membaca performa shift:
 
-Tabel yang dibuat:
+- `PCS SORTED` untuk total ikan yang sudah diproses.
+- `KG SORTED` untuk total berat.
+- `PCS / HOUR` untuk laju pcs per jam.
+- `KG / HOUR` untuk laju berat per jam.
 
-- `sorting_logs`
-- `operator_events`
-- `machine_commands`
-- `conveyor_state`
-- `machine_state`
-- `reset_events`
+Nilai berasal dari `data.json` atau proses integrasi yang menulis data ke file tersebut.
 
-## Setting Raspi WiFi
+## 8. Box Manager
 
-![Raspi WiFi settings](screenshots/04-settings-raspi-wifi.png)
+Box Manager menampilkan jalur penyimpanan A1 sampai C3. Tiap box mempunyai angka berat dan bar kapasitas.
 
-Default:
+Warna bar:
 
-```text
-Host: 192.168.30.185
-Port: 65432
-Timeout: 1.5 seconds
-```
+- Hijau untuk kapasitas normal.
+- Oranye untuk kapasitas mendekati penuh.
+- Merah untuk kapasitas tinggi dan perlu perhatian operator.
 
-Sesuaikan `Host` dengan IP Raspberry Pi di jaringan produksi.
+Reject bin berada di sisi kanan panel. Bagian ini menghitung total berat item reject.
 
-## Setup Raspberry Pi
+Klik box atau reject bin saat operator perlu reset nilai box tertentu. Aplikasi meminta konfirmasi sebelum reset dan mencatat event ke SQLite.
 
-1. Copy file ini ke Raspberry Pi:
+## 9. Velocity Manager
 
-```text
-Testing-UI/raspi_bridge_server.py
-```
+Velocity Manager menampilkan speed conveyor dalam `m/s`. Nilai yang tampil mengikuti konfigurasi conveyor.
 
-2. Jalankan di Raspi:
+Skala nilai:
 
-```bash
-python3 raspi_bridge_server.py
-```
+- `0` berarti `0.0 m/s`.
+- `8` berarti `0.8 m/s`.
+- `20` berarti `2.0 m/s`.
 
-3. Pastikan PC bisa ping Raspi:
+Slider conveyor dibuat rapat agar operator bisa membandingkan speed antar conveyor tanpa banyak gerak mata. Perubahan slider disimpan dan bisa dikirim ke Raspberry Pi sesuai command conveyor.
 
-```powershell
-ping 192.168.30.185
-```
+## 10. Log Activity
 
-4. Pastikan port terbuka:
+Log Activity menampilkan event terbaru dari sistem. Kolom yang tersedia:
 
-```powershell
-Test-NetConnection 192.168.30.185 -Port 65432
-```
+- `Time` untuk waktu event.
+- `Object` untuk nama object atau event operator.
+- `Kg` untuk nilai berat.
+- `Box` untuk tujuan box atau status info.
 
-## Command PC ke Raspi
+Contoh event:
 
-PC mengirim JSON TCP tanpa newline. Raspi boleh membalas JSON ACK.
+- `Sistem dimulai`
+- `Sistem dihentikan`
+- `Box B2 direset`
+- hasil sorting ke box tertentu
+
+Log tersimpan ke SQLite dan bisa diekspor ke CSV dari menu Settings.
+
+## 11. Settings: Camera
+
+![Settings camera](screenshots/03-settings-camera.png)
+
+Tab `Camera` dipakai untuk mengatur tampilan dan property kamera.
+
+Field yang tersedia:
+
+- `Brightness` mengatur terang gambar.
+- `Exposure` mengatur nilai exposure.
+- `Contrast` mengatur kontras.
+- `Gain` mengatur penguatan sinyal kamera.
+- `Hue` mengatur pergeseran warna.
+- `Auto exposure/gain` mengaktifkan penyesuaian otomatis.
+
+Perubahan slider langsung diterapkan ke preview dan hardware kamera jika kamera mendukung property tersebut. Setelah nilai sesuai, tekan `Apply`.
+
+## 12. Settings: Conveyor
+
+![Settings conveyor](screenshots/04-settings-conveyor-defaults.png)
+
+Tab `Conveyor` menyimpan default speed saat sistem dinyalakan. Nilai ini dikirim ke Raspberry Pi ketika operator menekan `START`.
+
+Cara set default conveyor:
+
+1. Buka `SETTINGS`.
+2. Pilih tab `Conveyor`.
+3. Geser slider conveyor yang diperlukan.
+4. Pastikan satuan di kanan slider sudah sesuai dalam `m/s`.
+5. Tekan `Apply`.
+
+Tidak ada tombol stop per conveyor di tab ini. Stop seluruh sistem dilakukan dari tombol `STOP` pada panel Machine Control.
+
+## 13. Settings: Range
+
+![Settings range](screenshots/05-settings-conveyor-coordinat.png)
+
+Tab `Range` menyimpan mapping koordinat tujuan box. Setiap box mempunyai dua nilai koordinat.
+
+Data yang diatur:
+
+- A1 sampai C3 untuk jalur box normal.
+- `TRASH` untuk reject bin.
+
+Gunakan tab ini saat teknisi mengubah posisi mekanik, jalur diverter, mapping servo, atau koordinat routing di sisi Raspberry Pi. Setelah perubahan selesai, tekan `Apply`.
+
+## 14. Settings: Data
+
+![Settings data](screenshots/06-settings-data-tools.png)
+
+Tab `Data` berisi alat untuk memuat dan mengambil data.
+
+`LOAD DATA`
+
+- Membaca ulang `Testing-UI/data.json`.
+- Memperbarui dashboard tanpa restart aplikasi.
+- Dipakai saat proses lain menulis data baru ke file monitoring.
+
+`EXPORT CSV`
+
+- Mengekspor log sorting yang terlihat.
+- File CSV dipakai untuk laporan shift, audit produksi, atau pengecekan event.
+
+Baris SQLite di bawah tombol menampilkan nama database yang sedang dipakai.
+
+## 15. Settings: SQLite
+
+![Settings SQLite](screenshots/07-settings-sqlite.png)
+
+Tab `SQLite` dilindungi PIN admin. Operator biasa tidak perlu mengubah bagian ini.
+
+Saat belum ada PIN:
+
+1. Supervisor membuka tab `SQLite`.
+2. Tekan `SET ADMIN PIN`.
+3. Buat PIN minimal 6 karakter.
+4. Simpan perubahan.
+
+Setelah PIN dibuat, perubahan DB Path hanya bisa dilakukan oleh user yang mengetahui PIN.
+
+Tabel SQLite:
+
+- `sorting_logs` untuk hasil sorting.
+- `operator_events` untuk event start, stop, reset, dan reset box.
+- `machine_commands` untuk command yang dikirim ke Raspberry Pi.
+- `conveyor_state` untuk perubahan speed conveyor.
+- `machine_state` untuk status mesin terakhir.
+- `reset_events` untuk snapshot sebelum reset.
+
+## 16. Settings: Raspi WiFi
+
+![Settings Raspi WiFi](screenshots/08-settings-raspi-wifi.png)
+
+Tab `Raspi WiFi` mengatur koneksi PC ke Raspberry Pi.
+
+Field yang tersedia:
+
+- `Enable command sending to Raspberry Pi over WiFi` mengaktifkan atau mematikan pengiriman command.
+- `Raspi IP / Host` berisi alamat IP Raspberry Pi.
+- `TCP Port` berisi port service di Raspberry Pi.
+- `Timeout (s)` berisi batas tunggu koneksi.
+
+Protocol yang dipakai: JSON melalui TCP tanpa newline. Raspberry Pi dapat mengirim ACK JSON sebagai balasan.
+
+## 17. Format Command ke Raspberry Pi
+
+PC mengirim payload JSON ke Raspberry Pi.
 
 Start:
 
@@ -172,21 +308,57 @@ Stop:
 {"command":"system_stop","status":"STOPPED"}
 ```
 
+Reset:
+
+```json
+{"command":"system_reset","status":"RESET"}
+```
+
 Set conveyor:
 
 ```json
 {"command":"set_conveyor_speed","conveyor_key":"conveyor_1","speed_ms":0.8,"raw_value":8}
 ```
 
-Reset reject:
+Reset box:
+
+```json
+{"command":"reset_box","box":"A1"}
+```
+
+Reset reject bin:
 
 ```json
 {"command":"reset_reject_bin","box":"TRASH"}
 ```
 
-## Integrasi GPIO atau COM di Raspi
+## 18. Setup Raspberry Pi
 
-Buka `raspi_bridge_server.py`, lalu isi fungsi ini sesuai wiring produksi:
+1. Salin file bridge ke Raspberry Pi.
+
+```text
+Testing-UI/raspi_bridge_server.py
+```
+
+2. Jalankan service di Raspberry Pi.
+
+```bash
+python3 raspi_bridge_server.py
+```
+
+3. Cek koneksi dari PC ke Raspberry Pi.
+
+```powershell
+ping <ip-raspi>
+```
+
+4. Cek port TCP.
+
+```powershell
+Test-NetConnection <ip-raspi> -Port <port>
+```
+
+5. Isi fungsi integrasi di `raspi_bridge_server.py` sesuai wiring produksi:
 
 - `apply_system_start`
 - `apply_system_stop`
@@ -195,17 +367,17 @@ Buka `raspi_bridge_server.py`, lalu isi fungsi ini sesuai wiring produksi:
 - `apply_reset_box`
 - `apply_reset_reject_bin`
 
-Contoh mapping:
+Contoh alur conveyor:
 
 ```text
-conveyor_1 raw_value 8 -> 0.8 m/s -> kirim ke VFD/COM/GPIO dari Raspi
+raw_value 8 -> 0.8 m/s -> Raspberry Pi kirim nilai ke VFD, serial/COM, GPIO, atau controller conveyor
 ```
 
-## Data Monitoring
+## 19. Format Data Monitoring
 
-Dashboard membaca `Testing-UI\data.json`. Sistem produksi bisa menulis file ini dari proses lain, lalu dashboard menarik perubahan saat sistem berjalan.
+Dashboard membaca `Testing-UI/data.json`. Proses lain boleh menulis file ini selama formatnya tetap sama.
 
-Format minimal:
+Contoh format:
 
 ```json
 {
@@ -231,14 +403,42 @@ Format minimal:
 }
 ```
 
-## Produksi
+## 20. Alur Kerja Operator
 
-Checklist sebelum mesin jalan:
+1. Nyalakan PC, kamera, dan panel mesin.
+2. Jalankan aplikasi SARVA.
+3. Pastikan `STATUS` berada di `STANDBY` atau `STOPPED`.
+4. Cek IP Raspberry Pi di `Settings > Raspi WiFi`.
+5. Cek default speed di `Settings > Conveyor`.
+6. Tekan `START`.
+7. Pantau kamera, box, log, dan velocity.
+8. Tekan `STOP` saat produksi selesai atau mesin perlu dihentikan.
+9. Gunakan `RESET` hanya setelah supervisor/operator berwenang menyetujui reset.
+10. Export CSV dari `Settings > Data` jika laporan shift dibutuhkan.
 
-1. PC dan Raspi tersambung ke WiFi yang sama.
-2. IP Raspi di tab `Raspi WiFi` benar.
-3. `raspi_bridge_server.py` berjalan di Raspi.
-4. Kamera terdeteksi oleh Windows.
-5. Supervisor sudah membuat Admin PIN.
-6. Conveyor default sudah diset.
-7. Operator menekan `START SYSTEM`.
+## 21. Catatan Troubleshooting
+
+Kamera tidak tampil:
+
+- Pastikan kamera terpasang di Windows.
+- Cek status `VIDEO` di header.
+- Buka `Settings > Camera`, lalu ubah brightness atau exposure untuk memastikan preview merespons.
+
+Command tidak sampai ke Raspberry Pi:
+
+- Pastikan checkbox WiFi command aktif.
+- Cek IP dan port di `Settings > Raspi WiFi`.
+- Jalankan ulang `raspi_bridge_server.py` di Raspberry Pi.
+- Cek log command di SQLite.
+
+Data tidak berubah:
+
+- Tekan `Refresh`.
+- Cek isi `Testing-UI/data.json`.
+- Pastikan proses produksi menulis format JSON yang benar.
+
+Database tidak bisa diubah:
+
+- Buat Admin PIN lebih dulu.
+- Masukkan PIN supervisor saat mengubah DB Path.
+- Gunakan SQLite lokal untuk mode produksi kecuali teknisi meminta lokasi lain.

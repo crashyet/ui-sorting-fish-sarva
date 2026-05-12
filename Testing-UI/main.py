@@ -2016,7 +2016,7 @@ class SarvaDashboard(tk.Tk):
         db_path = resolve_db_path(self.settings_data["database"].get("path"))
         tk.Label(
             parent,
-            text=f"SQLite: {db_path}",
+            text=f"SQLite: {db_path.name}",
             bg=COLORS["panel"],
             fg=COLORS["muted"],
             font=("Segoe UI", 8),

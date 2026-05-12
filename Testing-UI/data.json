@@ -2,8 +2,8 @@
   "info_data": {
     "pcs_sorted": "6634",
     "kg_sorted": "3234.5",
-    "pcs_per_hour": "86845",
-    "kg_per_hour": "42342.5"
+    "pcs_per_hour": "852943",
+    "kg_per_hour": "415864.3"
   },
   "box_manager": {
     "A1": "31",
@@ -26,6 +26,8 @@
     "[13:45:58|12/05] Sistem dimulai - 0kg -> INFO",
     "[13:46:16|12/05] Sistem dihentikan - 0kg -> INFO",
     "[16:48:08|12/05] Sistem dimulai - 0kg -> INFO",
-    "[16:52:49|12/05] Sistem dihentikan - 0kg -> INFO"
+    "[16:52:49|12/05] Sistem dihentikan - 0kg -> INFO",
+    "[17:11:08|12/05] Sistem dimulai - 0kg -> INFO",
+    "[17:11:36|12/05] Sistem dihentikan - 0kg -> INFO"
   ]
 }
