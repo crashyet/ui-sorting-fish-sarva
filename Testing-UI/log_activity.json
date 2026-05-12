@@ -1,0 +1,40 @@
+[
+  {
+    "time" : "12:51:20",
+    "date" : "14/07",
+    "jenis" : "Hiu",
+    "berat" : "0.4",
+    "box" : "B1"
+  },
+  {
+    "time" : "18:31:20",
+    "date" : "14/07",
+    "jenis" : "Layur",
+    "berat" : "3.1",
+    "box" : "A3"
+  },
+  {
+    "time" : "09:45:20",
+    "date" : "15/07",
+    "jenis" : "Layur",
+    "berat" : "1.8",
+    "box" : "A2"
+  },
+  {
+    "time" : "10:24:20",
+    "date" : "15/07",
+    "jenis" : "Kakap",
+    "berat" : "2.5",
+    "box" : "B3"
+  },
+  {
+    "time" : "11:24:20",
+    "date" : "15/07",
+    "jenis" : "Sampah",
+    "berat" : "0.1",
+    "box" : "Sampah"
+  }
+]
+
+
+
